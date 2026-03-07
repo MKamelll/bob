@@ -60,14 +60,31 @@ func (e *Editor) HandleUp() *Editor {
 }
 
 func (e *Editor) HandleDown() *Editor {
-	e.row = min(e.row+1, len(e.buffer))
+	e.row = min(e.row+1, len(e.buffer)-1)
+	e.col = min(e.col, len(e.buffer[e.row]))
+	return e
+}
+
+func (e *Editor) HandleLeft() *Editor {
+	e.col = max(0, e.col-1)
+	return e
+}
+
+func (e *Editor) HandleRight() *Editor {
+	e.col = min(e.col+1, len(e.buffer[e.row]))
 	return e
 }
 
 func (e *Editor) HandleKey(ev *tcell.EventKey) {
 	switch ev.Key() {
+	case tcell.KeyRight:
+		e.HandleRight()
+	case tcell.KeyLeft:
+		e.HandleLeft()
 	case tcell.KeyUp:
 		e.HandleUp()
+	case tcell.KeyDown:
+		e.HandleDown()
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
 		e.HandleBackspace()
 	case tcell.KeyEnter:
