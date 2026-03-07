@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"slices"
+	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -94,6 +96,18 @@ func (e *Editor) HandleKey(ev *tcell.EventKey) {
 	}
 }
 
+func (e *Editor) DrawGutter(s tcell.Screen) {
+	width := len(strconv.Itoa(len(e.buffer)))
+	gutterStyle := tcell.StyleDefault.Foreground(tcell.ColorDarkGray)
+
+	for y := range e.buffer {
+		gutter := fmt.Sprintf("%*d ", width, y+1)
+		for x, c := range gutter {
+			s.SetContent(x, y, c, nil, gutterStyle)
+		}
+	}
+}
+
 func (e *Editor) Draw(s tcell.Screen) {
 
 	s.Clear()
@@ -101,13 +115,17 @@ func (e *Editor) Draw(s tcell.Screen) {
 	defaultStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 	s.SetStyle(defaultStyle)
 
+	width := len(strconv.Itoa(len(e.buffer))) + 1
+
+	e.DrawGutter(s)
+
 	for y, line := range e.buffer {
 		for x, char := range line {
-			s.SetContent(x, y, char, nil, defaultStyle)
+			s.SetContent(x+width, y, char, nil, defaultStyle)
 		}
 	}
 
-	s.ShowCursor(e.col, e.row)
+	s.ShowCursor(e.col+width, e.row)
 	s.Show()
 }
 
