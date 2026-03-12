@@ -36,6 +36,23 @@ func (e *Editor) isAtStartOfBuffer() bool {
 	return e.row <= 0 && e.col <= 0
 }
 
+func (e *Editor) isAtEndOfBuffer() bool {
+	return e.row >= len(e.buffer)-1 && e.col >= len(e.buffer[len(e.buffer)-1])
+}
+
+func (e *Editor) peekNext() (rune, bool) {
+	if e.isAtEndOfBuffer() {
+		return 0, false
+	}
+
+	if e.col+1 < len(e.buffer[e.row]) {
+		return e.buffer[e.row][e.col+1], true
+	}
+
+	nextLine := e.buffer[e.row+1]
+	return nextLine[0], true
+}
+
 func (e *Editor) peekPrev() (rune, bool) {
 	if e.isAtStartOfBuffer() {
 		return 0, false
@@ -99,20 +116,26 @@ func (e *Editor) HandleRight() *Editor {
 }
 
 func (e *Editor) HandleCtrlW() *Editor {
-	for {
-		r, ok := e.peekPrev()
-		if !ok || !unicode.IsSpace(r) {
-			break
+	r, ok := e.peekPrev()
+
+	if ok && unicode.IsSpace(r) {
+		for {
+			r, ok := e.peekPrev()
+			if !ok || !unicode.IsSpace(r) {
+				break
+			}
+			e.HandleBackspace()
 		}
-		e.HandleBackspace()
 	}
 
-	for {
-		r, ok := e.peekPrev()
-		if !ok || unicode.IsSpace(r) {
-			break
+	if ok && !unicode.IsSpace(r) {
+		for {
+			r, ok := e.peekPrev()
+			if !ok || unicode.IsSpace(r) {
+				break
+			}
+			e.HandleBackspace()
 		}
-		e.HandleBackspace()
 	}
 
 	return e
