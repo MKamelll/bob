@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -31,7 +32,27 @@ func (e *Editor) RemoveRune() *Editor {
 	return e
 }
 
+func (e *Editor) isAtStartOfBuffer() bool {
+	return e.row <= 0 && e.col <= 0
+}
+
+func (e *Editor) peekPrev() (rune, bool) {
+	if e.isAtStartOfBuffer() {
+		return 0, false
+	}
+
+	if e.col > 0 {
+		return e.buffer[e.row][e.col-1], true
+	}
+
+	prevLine := e.buffer[e.row-1]
+	return prevLine[len(prevLine)-1], true
+}
+
 func (e *Editor) HandleBackspace() *Editor {
+	if e.isAtStartOfBuffer() {
+		return e
+	}
 	if e.col >= 1 {
 		e.RemoveRune()
 	} else if e.row >= 1 && e.col == 0 {
@@ -77,8 +98,30 @@ func (e *Editor) HandleRight() *Editor {
 	return e
 }
 
+func (e *Editor) HandleCtrlW() *Editor {
+	for {
+		r, ok := e.peekPrev()
+		if !ok || !unicode.IsSpace(r) {
+			break
+		}
+		e.HandleBackspace()
+	}
+
+	for {
+		r, ok := e.peekPrev()
+		if !ok || unicode.IsSpace(r) {
+			break
+		}
+		e.HandleBackspace()
+	}
+
+	return e
+}
+
 func (e *Editor) HandleKey(ev *tcell.EventKey) {
 	switch ev.Key() {
+	case tcell.KeyCtrlW:
+		e.HandleCtrlW()
 	case tcell.KeyRight:
 		e.HandleRight()
 	case tcell.KeyLeft:
